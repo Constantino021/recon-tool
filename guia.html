@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-AO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>recon.py — Guia da ferramenta</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-secondary: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --purple: #a371f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.7;
+  }
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+  header {
+    margin-bottom: 3rem;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--purple);
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+    font-family: 'Courier New', monospace;
+  }
+  h1 {
+    font-size: 2.2rem;
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    margin: 0;
+  }
+  h2 {
+    font-size: 1.4rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h3 {
+    font-size: 1.1rem;
+    margin: 1.5rem 0 0.5rem;
+    color: var(--accent);
+  }
+  p { color: var(--text); }
+  code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: var(--amber);
+  }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #a5d6ff;
+  }
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin: 1rem 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+  }
+  .flow-step {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--green);
+  }
+  .flow-arrow { color: var(--text-secondary); }
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.3rem;
+    margin: 1rem 0;
+  }
+  .step-card.risk { border-left-color: var(--red); }
+  .step-card.passive { border-left-color: var(--green); }
+  .step-card h3 { margin-top: 0; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .tag.passive { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag.active { background: rgba(248,81,73,0.15); color: var(--red); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+  td code { white-space: nowrap; }
+  .warning-box {
+    background: rgba(210,153,34,0.08);
+    border: 1px solid rgba(210,153,34,0.35);
+    border-radius: 8px;
+    padding: 1.2rem 1.4rem;
+    margin: 1.5rem 0;
+  }
+  .warning-box h3 {
+    color: var(--amber);
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .warning-box ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+  ul { padding-left: 1.2rem; }
+  li { margin: 0.3rem 0; }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="badge">$ python3 recon.py --help</span>
+    <h1>recon.py</h1>
+    <p class="subtitle">Mini ferramenta de reconhecimento — WHOIS, DNS, subdomínios e port scan numa cadeia só.</p>
+  </header>
+
+  <p>
+    <code>recon.py</code> automatiza a primeira fase de qualquer pentest ou investigação OSINT: descobrir o que existe
+    sobre um domínio antes de tocar em qualquer coisa mais invasiva. Junta numa ferramenta só o que normalmente seria
+    feito com vários comandos separados — <code>whois</code>, <code>dig</code>, brute-force manual de subdomínio, <code>nmap</code>
+    — e organiza tudo em relatório no terminal e em JSON.
+  </p>
+
+  <h2>Fluxo de execução</h2>
+  <div class="flow">
+    <span class="flow-step">WHOIS</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-step">DNS Enum</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-step">Subdomain Enum</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-step">Port Scan</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-step">Resumo de risco</span>
+  </div>
+
+  <h2>O que cada etapa faz</h2>
+
+  <div class="step-card passive">
+    <h3>1. WHOIS lookup <span class="tag passive">passivo</span></h3>
+    <p>Consulta o registro público do domínio: registrar, data de criação, data de expiração, nameservers e e-mails de contato. Ponto de partida clássico — só olha dados já públicos.</p>
+  </div>
+
+  <div class="step-card passive">
+    <h3>2. DNS enumeration <span class="tag passive">passivo</span></h3>
+    <p>Resolve os principais registros: <code>A</code>/<code>AAAA</code> (IPs), <code>MX</code> (e-mail), <code>TXT</code>, <code>NS</code>, <code>CNAME</code>, <code>SOA</code>. Se o <code>dnspython</code> não estiver instalado, cai num fallback básico só com <code>A record</code> via <code>socket</code>.</p>
+  </div>
+
+  <div class="step-card">
+    <h3>3. Subdomain enumeration <span class="tag passive">crt.sh passivo</span> <span class="tag active">brute-force ativo</span></h3>
+    <p><strong>crt.sh (Certificate Transparency)</strong> — consulta os logs públicos de certificados SSL emitidos para o domínio. Não toca no alvo, só olha um banco público.</p>
+    <p><strong>Brute-force com wordlist</strong> — testa palavras (<code>www</code>, <code>admin</code>, <code>dev</code>...) na frente do domínio e vê o que resolve via DNS. Ativo, mas simples e multi-thread.</p>
+  </div>
+
+  <div class="step-card risk">
+    <h3>4. Port scan <span class="tag active">ativo</span> — flag <code>--scan-ports</code></h3>
+    <p>Roda <code>nmap -sV</code> só nos subdomínios que <strong>realmente resolveram</strong>. Usa <code>python-nmap</code> se disponível, ou cai pro binário <code>nmap</code> via subprocess. Detecta versão de serviço, não só porta aberta.</p>
+  </div>
+
+  <div class="step-card risk">
+    <h3>5. Resumo de risco <span class="tag active">automático</span></h3>
+    <p>Cruza as portas abertas com uma lista de portas classicamente perigosas de estarem expostas (RDP, SMB, FTP, Telnet, bancos de dados, VNC) e explica o motivo do risco de cada uma. Roda sozinho junto com o port scan.</p>
+  </div>
+
+  <h2>Instalação</h2>
+  <pre><code>sudo dnf install nmap
+pip install requests dnspython python-whois python-nmap --break-system-packages</code></pre>
+  <p><code>dnspython</code> e <code>python-whois</code> são opcionais — o script tem fallback pras duas. Mas pra usar 100% das features, instala tudo.</p>
+
+  <h2>Como usar</h2>
+
+  <h3>Recon básico (WHOIS + DNS + crt.sh)</h3>
+  <pre><code>python3 recon.py -d exemplo.com</code></pre>
+
+  <h3>Com brute-force de subdomínio</h3>
+  <pre><code>python3 recon.py -d exemplo.com -w subdomains-small.txt</code></pre>
+
+  <h3>Fluxo completo — subdomínios + port scan + risco + JSON</h3>
+  <pre><code>python3 recon.py -d exemplo.com -w subdomains-small.txt --scan-ports -o resultado.json</code></pre>
+
+  <h2>Flags disponíveis</h2>
+  <table>
+    <tr><th>Flag</th><th>Descrição</th></tr>
+    <tr><td><code>-d, --domain</code></td><td>Domínio alvo (obrigatório)</td></tr>
+    <tr><td><code>-w, --wordlist</code></td><td>Wordlist para brute-force de subdomínio</td></tr>
+    <tr><td><code>-o, --output</code></td><td>Salva o resultado completo em JSON</td></tr>
+    <tr><td><code>-t, --threads</code></td><td>Threads do brute-force (padrão: 20)</td></tr>
+    <tr><td><code>--no-crtsh</code></td><td>Pula a consulta ao crt.sh</td></tr>
+    <tr><td><code>--scan-ports</code></td><td>Ativa o port scan nos subdomínios resolvidos</td></tr>
+    <tr><td><code>--ports</code></td><td>Lista de portas a escanear (padrão: mais comuns)</td></tr>
+    <tr><td><code>--scan-threads</code></td><td>Threads do port scan (padrão: 5)</td></tr>
+  </table>
+
+  <h2>Sobre a wordlist incluída</h2>
+  <p>
+    <code>subdomains-small.txt</code> é uma lista pequena de <strong>exemplo/teste</strong> — 30 palavras comuns. Serve pra validar que o script funciona.
+    Pra recon sério, use wordlists maiores como as da
+    <a href="https://github.com/danielmiessler/SecLists" style="color: var(--accent);">SecLists</a>.
+  </p>
+
+  <div class="warning-box">
+    <h3>&#9888; Uso responsável</h3>
+    <p><strong>WHOIS e crt.sh são passivos</strong> — só consultam bancos públicos, não tocam na infraestrutura do alvo.</p>
+    <p><strong>Brute-force de subdomínio e port scan são ativos</strong> — geram tráfego direto contra a infraestrutura de terceiros. Só rode contra:</p>
+    <ul>
+      <li>Domínios/infraestrutura que você possui</li>
+      <li>Labs de prática (TryHackMe, HackTheBox, etc)</li>
+      <li>Alvos com escopo de autorização assinado (bug bounty, pentest contratado)</li>
+    </ul>
+    <p>Fazer isso contra domínio de terceiros sem autorização é ilegal na maioria das jurisdições — inclusive em Angola.</p>
+  </div>
+
+  <h2>Roadmap</h2>
+  <ul>
+    <li>Exportar relatório em Markdown/HTML pronto pro portfólio</li>
+    <li>Integração com Shodan/Censys como fonte extra de subdomínio</li>
+    <li>Detecção de tecnologia web (headers, CMS) nos alvos ativos</li>
+    <li>Modo "quiet" pra rodar em pipeline/CI</li>
+  </ul>
+
+  <footer>
+    recon.py — projeto de portfólio de cybersegurança de Constantino021
+  </footer>
+
+</div>
+</body>
+</html>
