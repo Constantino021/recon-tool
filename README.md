@@ -41,7 +41,7 @@ Cruza as portas abertas encontradas com uma lista de portas classicamente perigo
 
 ### 1. Clonar o repositório
 ```bash
-git clone https://github.com/Constantino021/recon-tool.git
+git clone https://github.com/Constantino021/recon-tool
 cd recon-tool
 ```
 
