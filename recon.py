@@ -10,13 +10,15 @@ Dependências: requests, dnspython, python-whois
 
 import argparse
 import json
+import random
 import shutil
 import socket
+import string
 import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 
 try:
     import requests
@@ -44,6 +46,39 @@ def banner():
  ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝
 {C.END}{C.YELLOW}   Recon Script — WHOIS / DNS / Subdomains{C.END}
 """)
+
+
+# ------------------- WILDCARD DNS CHECK -------------------
+def detect_wildcard_dns(domain, samples=3):
+    """
+    Testa subdomínios aleatórios que quase certamente não existem.
+    Se eles resolverem, o domínio tem wildcard DNS (*.dominio.com aponta
+    tudo pra algum IP), o que invalida um brute-force normal — qualquer
+    nome vai "existir", então não dá pra confiar que o subdomínio é real.
+    Retorna (is_wildcard: bool, wildcard_ips: set).
+    """
+    print(f"{C.BOLD}[*] Checando Wildcard DNS{C.END}")
+    wildcard_ips = set()
+
+    for _ in range(samples):
+        fake_sub = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
+        fqdn = f"{fake_sub}.{domain}"
+        try:
+            ip = socket.gethostbyname(fqdn)
+            wildcard_ips.add(ip)
+        except socket.gaierror:
+            pass
+
+    if wildcard_ips:
+        print(f"    {C.RED}[!] WILDCARD DNS DETECTADO{C.END} — subdomínios aleatórios e inexistentes "
+              f"resolveram para: {', '.join(wildcard_ips)}")
+        print(f"    {C.YELLOW}Isso significa que *QUALQUER* nome.{domain} vai \"existir\". "
+              f"O brute-force abaixo não é confiável para provar existência real —{C.END}")
+        print(f"    {C.YELLOW}trate os resultados como candidatos, não como confirmados.{C.END}\n")
+        return True, wildcard_ips
+    else:
+        print(f"    {C.GREEN}nenhum wildcard detectado — resultados do brute-force são confiáveis{C.END}\n")
+        return False, wildcard_ips
 
 
 # ------------------- WHOIS -------------------
@@ -105,17 +140,19 @@ def run_dns_enum(domain):
 
 
 # ------------------- SUBDOMAIN ENUM -------------------
-def check_subdomain(sub, domain):
-    """Tenta resolver um subdomínio via DNS."""
+def check_subdomain(sub, domain, wildcard_ips=None):
+    """Tenta resolver um subdomínio via DNS. Ignora resultado se bater num IP de wildcard."""
     fqdn = f"{sub}.{domain}"
     try:
         ip = socket.gethostbyname(fqdn)
+        if wildcard_ips and ip in wildcard_ips:
+            return None  # provavelmente falso positivo do wildcard
         return fqdn, ip
     except socket.gaierror:
         return None
 
 
-def bruteforce_subdomains(domain, wordlist_path, threads=20):
+def bruteforce_subdomains(domain, wordlist_path, threads=20, wildcard_ips=None):
     print(f"{C.BOLD}[*] Subdomain Bruteforce (wordlist: {wordlist_path}){C.END}")
     found = {}
 
@@ -127,9 +164,11 @@ def bruteforce_subdomains(domain, wordlist_path, threads=20):
         return found
 
     print(f"    testando {len(words)} palavras com {threads} threads...")
+    if wildcard_ips:
+        print(f"    {C.YELLOW}(filtrando automaticamente respostas iguais ao IP de wildcard){C.END}")
 
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        futures = {executor.submit(check_subdomain, w, domain): w for w in words}
+        futures = {executor.submit(check_subdomain, w, domain, wildcard_ips): w for w in words}
         for future in as_completed(futures):
             result = future.result()
             if result:
@@ -312,19 +351,23 @@ def main():
 
     results = {
         "domain": args.domain,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "whois": {},
         "dns_records": {},
+        "wildcard_dns": {"detected": False, "ips": []},
         "subdomains": {},
     }
 
     results["whois"] = run_whois(args.domain)
     results["dns_records"] = run_dns_enum(args.domain)
 
+    is_wildcard, wildcard_ips = detect_wildcard_dns(args.domain)
+    results["wildcard_dns"] = {"detected": is_wildcard, "ips": sorted(wildcard_ips)}
+
     all_subs = {}
 
     if args.wordlist:
-        brute_results = bruteforce_subdomains(args.domain, args.wordlist, args.threads)
+        brute_results = bruteforce_subdomains(args.domain, args.wordlist, args.threads, wildcard_ips)
         all_subs.update(brute_results)
 
     if not args.no_crtsh:
@@ -353,6 +396,9 @@ def main():
 
     elapsed = time.time() - start
     print(f"{C.BOLD}{C.CYAN}[*] Finalizado em {elapsed:.2f}s — {len(all_subs)} subdomínios únicos encontrados{C.END}")
+    if is_wildcard:
+        print(f"{C.YELLOW}[!] Lembrete: este domínio tem wildcard DNS — trate os subdomínios do brute-force "
+              f"com cautela (crt.sh continua confiável, pois é baseado em certificados reais emitidos).{C.END}")
 
     if args.output:
         with open(args.output, "w") as f:
